@@ -7,17 +7,17 @@ defmodule Week5 do
 
   def getQuotes() do
     case HTTPoison.get("https://quotes.toscrape.com/") do
-      {:ok, %HTTPoison.Response{body: body}} ->
+      {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         Floki.find(body, "div.quote")
         |> map(&parseQuote/1)
-      {:error, reason} ->
-        IO.puts "Fetch failed: #{inspect(reason)}"
-        []
+      {:ok, %HTTPoison.Response{status_code: 404}} ->
+          IO.puts ("Not found :(")
+      {:error, %HTTPoison.Error{reason: reason}} ->
+          IO.inspect reason
     end
-
   end
 
-  defp parseQuote(div) do
+  def parseQuote(div) do
     %{
       author: div |> Floki.find("small.author") |> Floki.text(),
       quote: div |> Floki.find("span.text") |> Floki.text(),
@@ -26,10 +26,8 @@ defmodule Week5 do
   end
 
   def quotesToJson() do
-    case File.write("quotes.json", Jason.encode!(getQuotes())) do
-      :ok -> IO.puts "Find your quotes here: quotes.json"
-      {:error, reason} -> IO.puts("Failed to write quotes: #{inspect(reason)}")
-    end
+     File.write("quotes.json", Jason.encode!(getQuotes()))
+     IO.puts("Check the quotes.json file")
   end
 
 end
